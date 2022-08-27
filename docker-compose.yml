@@ -1,0 +1,19 @@
+version: "3.3"
+services:
+  n8n-main:
+    container_name: n8n-main
+    ports:
+      - "5678:5678"
+    image: n8nio/n8n
+    env_file:
+      - local.env
+    volumes:
+      - ./n8n/:/home/node/.n8n/
+    command: n8n
+  mongo:
+    container_name: mongo
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example

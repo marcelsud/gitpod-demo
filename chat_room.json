@@ -1,0 +1,361 @@
+{
+  "name": "Chat room",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "9b302a23-a29e-4e7b-a80a-ac6f4aab2c38",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        620,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "collection": "mensagens",
+        "fields": "nome,mensagem,timestamp",
+        "options": {}
+      },
+      "id": "7bfdca0a-fae4-4ab0-8efd-9b1731c089f9",
+      "name": "MongoDB",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        360
+      ],
+      "credentials": {
+        "mongoDb": {
+          "id": "1",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"id\": \"{{$json[\"id\"]}}\" ,\n  \"timestamp\": \"{{$node[\"Preparar a mensagem\"].json[\"timestamp\"]}}\"\n}",
+        "options": {}
+      },
+      "id": "97eefb63-a75a-4bc1-8bf3-10d5b5b463c9",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "item.timestamp = DateTime.utc().toISO();\n\nreturn item;"
+      },
+      "id": "e291a002-1a4b-4898-8d35-df57f0026556",
+      "name": "Pegar horário atual",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [
+        600,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "nome",
+              "value": "={{$json[\"body\"][\"nome\"]}}"
+            },
+            {
+              "name": "mensagem",
+              "value": "={{$json[\"body\"][\"mensagem\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a22edc40-84db-4c45-bcf2-2dafe8011236",
+      "name": "Preparar a mensagem",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        840,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "path": "listar-mensagens",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "139aeb6f-1c40-48ee-9dfc-44a75fc81d0f",
+      "name": "Listar Mensagens",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        340,
+        600
+      ],
+      "webhookId": "493a43b2-50b7-4608-8ebe-8fcc9398742f"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f6c6ae88-ff6f-47b6-ae7f-9584a8c48529",
+      "name": "Respond to Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "aggregateItems",
+        "aggregate": "aggregateAllItemData"
+      },
+      "id": "713ba69f-3316-43cd-afc0-673c95c35b46",
+      "name": "Item Lists",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [
+        840,
+        600
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "httpMethod": "DELETE",
+        "path": "deletar-mensagens",
+        "responseCode": 202,
+        "options": {}
+      },
+      "id": "49091efa-383c-4446-bc1b-cbe30c616a67",
+      "name": "Deletar mensagens",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        340,
+        840
+      ],
+      "webhookId": "6d50f4d3-5f7e-413c-a0c6-9844ff96769c"
+    },
+    {
+      "parameters": {
+        "collection": "mensagens",
+        "options": {
+          "sort": "{}"
+        }
+      },
+      "id": "d975d80a-8cd8-4f58-9f39-3a51f0f0a507",
+      "name": "Buscar mensagens",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        600,
+        600
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "mongoDb": {
+          "id": "1",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "collection": "mensagens"
+      },
+      "id": "34cf900a-b1bf-4227-a79e-912d25f7be68",
+      "name": "Deletar todas as mensagens",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [
+        600,
+        840
+      ],
+      "credentials": {
+        "mongoDb": {
+          "id": "1",
+          "name": "MongoDB account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "if (\n\tArray.isArray(item.data)\n\t&& item.data.length > 0\n\t&& Object.keys(item.data[0]).length === 0\n) {\n\treturn {\n\t\t\"data\": []\n\t};\n}\n\nreturn item;"
+      },
+      "id": "59375f96-cd56-4c6a-a0c0-6f276e2fddb9",
+      "name": "Tratar mensagens",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        600
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "sort",
+        "type": "code",
+        "code": "// The two items to compare are in the variables a and b\n// Access the fields in a.json and b.json\n// Return -1 if a should go before b\n// Return 1 if b should go before a\n// Return 0 if there's no difference\n\nfieldName = 'timestamp';\n\nconst dt1 = DateTime.fromISO(a.json[fieldName], {zone: 'utc'});\nconst dt2 = DateTime.fromISO(b.json[fieldName], {zone: 'utc'});\n\nif (dt1 < dt2) {\n\t\treturn -1;\n}\nif (dt1 > dt2) {\n\t\treturn 1;\n}\nreturn 0;"
+      },
+      "id": "eb27bca8-7d5a-4ba0-b962-1ac8b2d778bb",
+      "name": "Ordenar mensagens",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enviar-mensagem",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8f00eb31-3b49-49a2-8d62-8aaee94a7759",
+      "name": "Enviar Mensagens",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        340,
+        360
+      ],
+      "webhookId": "2c982cfb-d2d3-4ac6-8af9-93e260ccf161"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MongoDB": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pegar horário atual": {
+      "main": [
+        [
+          {
+            "node": "Preparar a mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar a mensagem": {
+      "main": [
+        [
+          {
+            "node": "MongoDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Buscar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Lists": {
+      "main": [
+        [
+          {
+            "node": "Tratar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deletar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Deletar todas as mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Item Lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tratar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Ordenar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ordenar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Pegar horário atual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": 1,
+  "meta": {
+    "instanceId": "83ac8d60d0b01966394e564586fee7769a345f01e0467d47d85cc83c4720d086"
+  },
+  "tags": []
+}
